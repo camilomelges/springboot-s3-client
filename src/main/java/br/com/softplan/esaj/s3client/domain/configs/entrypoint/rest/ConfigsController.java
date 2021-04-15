@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.softplan.esaj.s3client.domain.i18n.services.GetMessageService;
-import br.com.softplan.esaj.s3client.utils.entrypoint.exceptions.ErrorInternal500Exception;
+import br.com.softplan.esaj.s3client.utils.entrypoint.exceptions.InternalError500Exception;
 
 @RestController
 @RequestMapping("/configs")
@@ -21,7 +21,7 @@ public class ConfigsController {
 		try {
 			return getMessageService.run(locale, "configs.controller.getApplication.status");
 		} catch (Exception e) {
-			throw new ErrorInternal500Exception(getMessageService.run(locale, "configs.controller.getApplication.status.error500"));
+			throw new InternalError500Exception(getMessageService.run(locale, "configs.controller.getApplication.status.error500"));
 		}
 	}
 }
