@@ -25,21 +25,30 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Value("${s3Client.cors.allowedOrigins}")
 	private String[] setAllowedOrigins;
 
+
 	@Autowired
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		auth.inMemoryAuthentication().withUser(basicUserName).password("{noop}".concat(basicPassword)).roles("APPLICATION");
+		auth.inMemoryAuthentication()
+			.withUser(basicUserName)
+			.password("{noop}".concat(basicPassword))
+			.roles("APPLICATION");
 	}
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		http.cors().and().csrf().disable().authorizeRequests().anyRequest().authenticated().and().httpBasic();
+		http
+			.cors().and()
+			.csrf().disable()
+			.authorizeRequests().anyRequest().authenticated()
+			.and()
+			.httpBasic();
 	}
 
 	@Bean
 	CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList(setAllowedOrigins));
-		configuration.setAllowedMethods(Arrays.asList("POST", "OPTIONS", "GET", "DELETE"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "OPTIONS"));
 		configuration.addAllowedHeader("*");
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
