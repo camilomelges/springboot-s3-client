@@ -1,0 +1,17 @@
+server:
+  port: 5001
+
+s3Client:
+  auth:
+    basicAuth:
+      userName: saj
+      password: agesune1
+  cors:
+    allowedOrigins: "*"
+  configs:
+    UNJ_API_S3_CONNECTION_TIMEOUT: 10000ms
+    UNJ_API_S3_REQUEST_TIMEOUT: 0
+    UNJ_API_S3_SOCKET_TIMEOUT: 50000ms
+    UNJ_API_S3_MAX_POOL_CONNECTION: 50
+    UNJ_API_S3_MAX_IDLE_MILLIS: 60000ms
+    UNJ_API_S3_CONNECTION_TTL: -1
