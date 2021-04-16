@@ -8,11 +8,11 @@
 		<version>2.4.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>br.com.softplan.esaj</groupId>
-	<artifactId>s3client</artifactId>
+	<groupId>br.com.rafamilo</groupId>
+	<artifactId>springboots3client</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>s3client</name>
-	<description>Service s3client da softplan</description>
+	<description>Generic amazon s3 client with springboot</description>
 	<properties>
 		<java.version>14</java.version>
 		<aws-java-sdk-s3.version>[1.11.998,)</aws-java-sdk-s3.version>
