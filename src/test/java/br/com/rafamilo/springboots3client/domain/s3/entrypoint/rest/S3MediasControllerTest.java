@@ -6,6 +6,7 @@ import java.util.Map;
 
 import br.com.rafamilo.springboots3client.domain.i18n.services.GetMessageServiceImpl;
 import br.com.rafamilo.springboots3client.domain.s3.dtos.ConfigS3DTO;
+import br.com.rafamilo.springboots3client.domain.s3.dtos.DeleteMediaDTO;
 import br.com.rafamilo.springboots3client.domain.s3.dtos.GetMediaDTO;
 import br.com.rafamilo.springboots3client.domain.s3.dtos.PostMediaDTO;
 import br.com.rafamilo.springboots3client.testcontainers.S3ContainerSingleton;
@@ -90,8 +91,12 @@ public class S3MediasControllerTest extends S3ContainerSingleton {
 			.fileName(fileName).build();
 	}
 
-	private MultiValueMap mountMultiValueMap(final Object object) throws NoSuchAlgorithmException {
-		return new LinkedMultiValueMap<>(objectMapper.convertValue(object, Map.class));
+	private DeleteMediaDTO mountDeleteDTO(final String fileName) throws NoSuchAlgorithmException {
+		final byte[] fileContent = new byte[20];
+		SecureRandom.getInstanceStrong().nextBytes(fileContent);
+		return DeleteMediaDTO.builder()
+			.configS3DTO(mountConfigS3DTO())
+			.fileName(fileName).build();
 	}
 
 	@Test
@@ -142,5 +147,53 @@ public class S3MediasControllerTest extends S3ContainerSingleton {
 		ResponseEntity<byte[]> resultGet = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, byte[].class);
 		Assertions.assertEquals(HttpStatus.OK, resultGet.getStatusCode());
 		Assertions.assertArrayEquals(postMediaDTO.getFileContent(), resultGet.getBody());
+	}
+
+	@Test
+	void deveSalvarPegarOArquivoDeletarEQuandoBuscarDeveRetornarUmErro() throws NoSuchAlgorithmException {
+		final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(getRequestURL());
+		final PostMediaDTO postMediaDTO = mountPostDTO(null);
+
+		HttpEntity<?> entity = new HttpEntity<>(postMediaDTO, createHeaders(null));
+		ResponseEntity<String> resultPost = testRestTemplate.exchange(builder.toUriString(), HttpMethod.POST, entity, String.class);
+		Assertions.assertEquals(HttpStatus.OK, resultPost.getStatusCode());
+
+		String fileName = resultPost.getBody().substring(resultPost.getBody().lastIndexOf('/') + 1);
+
+		final GetMediaDTO getMediaDTO = mountGetDTO(fileName);
+		entity = new HttpEntity<>(getMediaDTO, createHeaders(null));
+		builder.queryParam("s3Url", getMediaDTO.getConfigS3DTO().getS3Url());
+		builder.queryParam("s3AccessKey", getMediaDTO.getConfigS3DTO().getS3AccessKey());
+		builder.queryParam("s3SecretKey", getMediaDTO.getConfigS3DTO().getS3SecretKey());
+		builder.queryParam("s3Region", getMediaDTO.getConfigS3DTO().getS3Region());
+		builder.queryParam("s3BucketName", getMediaDTO.getConfigS3DTO().getS3BucketName());
+		builder.queryParam("fileName", getMediaDTO.getFileName());
+
+		ResponseEntity<byte[]> resultGet = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, byte[].class);
+		Assertions.assertEquals(HttpStatus.OK, resultGet.getStatusCode());
+		Assertions.assertArrayEquals(postMediaDTO.getFileContent(), resultGet.getBody());
+
+		final DeleteMediaDTO deleteMediaDTO = mountDeleteDTO(fileName);
+		entity = new HttpEntity<>(deleteMediaDTO, createHeaders(null));
+		builder.replaceQueryParam("s3Url", deleteMediaDTO.getConfigS3DTO().getS3Url());
+		builder.replaceQueryParam("s3AccessKey", deleteMediaDTO.getConfigS3DTO().getS3AccessKey());
+		builder.replaceQueryParam("s3SecretKey", deleteMediaDTO.getConfigS3DTO().getS3SecretKey());
+		builder.replaceQueryParam("s3Region", deleteMediaDTO.getConfigS3DTO().getS3Region());
+		builder.replaceQueryParam("s3BucketName", deleteMediaDTO.getConfigS3DTO().getS3BucketName());
+		builder.replaceQueryParam("fileName", deleteMediaDTO.getFileName());
+
+		ResponseEntity<Void> resultDelete = testRestTemplate.exchange(builder.toUriString(), HttpMethod.DELETE, entity, Void.class);
+		Assertions.assertEquals(HttpStatus.OK, resultDelete.getStatusCode());
+
+		entity = new HttpEntity<>(getMediaDTO, createHeaders(null));
+		builder.replaceQueryParam("s3Url", getMediaDTO.getConfigS3DTO().getS3Url());
+		builder.replaceQueryParam("s3AccessKey", getMediaDTO.getConfigS3DTO().getS3AccessKey());
+		builder.replaceQueryParam("s3SecretKey", getMediaDTO.getConfigS3DTO().getS3SecretKey());
+		builder.replaceQueryParam("s3Region", getMediaDTO.getConfigS3DTO().getS3Region());
+		builder.replaceQueryParam("s3BucketName", getMediaDTO.getConfigS3DTO().getS3BucketName());
+		builder.replaceQueryParam("fileName", getMediaDTO.getFileName());
+
+		resultGet = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, byte[].class);
+		Assertions.assertEquals(HttpStatus.OK, resultGet.getStatusCode());
 	}
 }

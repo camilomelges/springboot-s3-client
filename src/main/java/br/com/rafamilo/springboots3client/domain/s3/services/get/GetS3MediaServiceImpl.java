@@ -5,6 +5,7 @@ import java.io.IOException;
 import br.com.rafamilo.springboots3client.domain.s3.services.config.GetS3ConfigService;
 import br.com.rafamilo.springboots3client.utils.entrypoint.exceptions.BadRequest400Exception;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +33,12 @@ public class GetS3MediaServiceImpl implements GetS3MediaService {
 				getMediaDTO.getFileName()
 			).getObjectContent().readAllBytes();
 		} catch (IOException e) {
-			throw new BadRequest400Exception("s3.service.get.createFile.error");
+			throw new BadRequest400Exception("s3.service.get.getFile.error400");
+		} catch (AmazonS3Exception e) {
+			if (e.getStatusCode() == 404) {
+				throw new BadRequest400Exception("s3.service.get.getFile.error500");
+			}
+			throw new BadRequest400Exception(e.getMessage());
 		}
 	}
 }

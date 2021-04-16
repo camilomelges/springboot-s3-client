@@ -17,8 +17,8 @@ public class DeleteMediaDTO {
 
 	private ConfigS3DTO configS3DTO;
 
-	@NotNull(message = "s3.dto.deleteMedia.fileUrl.null.error")
-	@NotBlank(message = "s3.dto.deleteMedia.fileUrl.blank.error")
-	@NotEmpty(message = "s3.dto.deleteMedia.fileUrl.empty.error")
-	private String fileUrl;
+	@NotNull(message = "s3.dto.deleteMedia.fileName.null.error")
+	@NotBlank(message = "s3.dto.deleteMedia.fileName.blank.error")
+	@NotEmpty(message = "s3.dto.deleteMedia.fileName.empty.error")
+	private String fileName;
 }
