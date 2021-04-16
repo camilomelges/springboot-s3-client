@@ -39,4 +39,13 @@ public class ConfigS3DTO {
 	@NotBlank(message = "s3.dto.configS3.s3BucketName.blank.error")
 	@NotEmpty(message = "s3.dto.configS3.s3BucketName.empty.error")
 	private String s3BucketName;
+
+	public static ConfigS3DTO mountFromParams(final String s3Url, final String s3AccessKey, final String s3SecretKey, final String s3Region, final String s3BucketName) {
+		return ConfigS3DTO.builder()
+			.s3Url(s3Url)
+			.s3AccessKey(s3AccessKey)
+			.s3SecretKey(s3SecretKey)
+			.s3Region(s3Region)
+			.s3BucketName(s3BucketName).build();
+	}
 }

@@ -5,12 +5,15 @@ import java.security.SecureRandom;
 import java.util.Map;
 
 import br.com.rafamilo.springboots3client.domain.i18n.services.GetMessageServiceImpl;
+import br.com.rafamilo.springboots3client.domain.s3.dtos.ConfigS3DTO;
+import br.com.rafamilo.springboots3client.domain.s3.dtos.GetMediaDTO;
+import br.com.rafamilo.springboots3client.domain.s3.dtos.PostMediaDTO;
+import br.com.rafamilo.springboots3client.testcontainers.S3ContainerSingleton;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -24,32 +27,21 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import br.com.rafamilo.springboots3client.domain.s3.dtos.ConfigS3DTO;
-import br.com.rafamilo.springboots3client.domain.s3.dtos.GetMediaDTO;
-import br.com.rafamilo.springboots3client.domain.s3.dtos.PostMediaDTO;
-import br.com.rafamilo.springboots3client.testcontainers.S3ContainerSingleton;
-
 @ExtendWith({ SpringExtension.class })
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class S3MediasControllerTest extends S3ContainerSingleton {
 
+	private static final String BUCKET_NAME = "test";
+	private final TestRestTemplate testRestTemplate = new TestRestTemplate();
+	private final ObjectMapper objectMapper = new ObjectMapper();
 	@Value("${s3Client.auth.basicAuth.userName}")
 	private String basicUserName;
-
 	@Value("${s3Client.auth.basicAuth.password}")
 	private String basicPassword;
-
-	private final TestRestTemplate testRestTemplate = new TestRestTemplate();
-
 	@InjectMocks
 	private GetMessageServiceImpl getMessageService;
-
 	@Value("${server.port}")
 	private String port;
-
-	private final ObjectMapper objectMapper = new ObjectMapper();
-
-	private static final String BUCKET_NAME = "test";
 
 	private String getRequestURL() {
 		return "http://localhost:" + port + "/s3-medias";
@@ -140,8 +132,14 @@ public class S3MediasControllerTest extends S3ContainerSingleton {
 
 		final GetMediaDTO getMediaDTO = mountGetDTO(fileName);
 		entity = new HttpEntity<>(getMediaDTO, createHeaders(null));
+		builder.queryParam("s3Url", getMediaDTO.getConfigS3DTO().getS3Url());
+		builder.queryParam("s3AccessKey", getMediaDTO.getConfigS3DTO().getS3AccessKey());
+		builder.queryParam("s3SecretKey", getMediaDTO.getConfigS3DTO().getS3SecretKey());
+		builder.queryParam("s3Region", getMediaDTO.getConfigS3DTO().getS3Region());
+		builder.queryParam("s3BucketName", getMediaDTO.getConfigS3DTO().getS3BucketName());
+		builder.queryParam("fileName", getMediaDTO.getFileName());
 
-		ResponseEntity<byte[]> resultGet = testRestTemplate.exchange(builder.toUriString().concat("/get-media"), HttpMethod.POST, entity, byte[].class);
+		ResponseEntity<byte[]> resultGet = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, byte[].class);
 		Assertions.assertEquals(HttpStatus.OK, resultGet.getStatusCode());
 		Assertions.assertArrayEquals(postMediaDTO.getFileContent(), resultGet.getBody());
 	}
