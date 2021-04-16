@@ -2,15 +2,16 @@ package br.com.rafamilo.springboots3client.domain.s3.services.get;
 
 import java.io.IOException;
 
+import br.com.rafamilo.springboots3client.domain.s3.dtos.GetMediaDTO;
 import br.com.rafamilo.springboots3client.domain.s3.services.config.GetS3ConfigService;
+import br.com.rafamilo.springboots3client.domain.s3.services.validate.ValidateS3Service;
 import br.com.rafamilo.springboots3client.utils.entrypoint.exceptions.BadRequest400Exception;
+import br.com.rafamilo.springboots3client.utils.entrypoint.exceptions.InternalError500Exception;
+import br.com.rafamilo.springboots3client.utils.entrypoint.exceptions.NotFound404Exception;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import br.com.rafamilo.springboots3client.domain.s3.dtos.GetMediaDTO;
-import br.com.rafamilo.springboots3client.domain.s3.services.validate.ValidateS3Service;
 
 @Service
 @RequiredArgsConstructor
@@ -35,10 +36,11 @@ public class GetS3MediaServiceImpl implements GetS3MediaService {
 		} catch (IOException e) {
 			throw new BadRequest400Exception("s3.service.get.getFile.error400");
 		} catch (AmazonS3Exception e) {
-			if (e.getStatusCode() == 404) {
-				throw new BadRequest400Exception("s3.service.get.getFile.error500");
+			switch (e.getStatusCode()) {
+				case 400 -> throw new BadRequest400Exception("s3.service.get.getFile.error400");
+				case 404 -> throw new NotFound404Exception("s3.service.get.getFile.error404");
+				default -> throw new InternalError500Exception("s3.service.get.getFile.error500");
 			}
-			throw new BadRequest400Exception(e.getMessage());
 		}
 	}
 }

@@ -11,6 +11,7 @@ import br.com.rafamilo.springboots3client.utils.entrypoint.exceptions.BadRequest
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.compress.utils.FileNameUtils;
 import org.springframework.stereotype.Service;
 
@@ -18,6 +19,7 @@ import br.com.rafamilo.springboots3client.domain.s3.components.generateuniquenam
 import br.com.rafamilo.springboots3client.domain.s3.dtos.PostMediaDTO;
 import br.com.rafamilo.springboots3client.domain.s3.services.validate.ValidateS3Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostS3MediaServiceImpl implements PostS3MediaService {
@@ -31,7 +33,10 @@ public class PostS3MediaServiceImpl implements PostS3MediaService {
 		validateS3Service.run(s3Client, postMediaDTO.getConfigS3DTO());
 
 		final String uniqueFileName = mountFileName(postMediaDTO);
-		s3Client.putObject(mountRequestObject(postMediaDTO, uniqueFileName));
+		final PutObjectRequest putObjectRequest = mountRequestObject(postMediaDTO, uniqueFileName);
+		s3Client.putObject(putObjectRequest);
+
+		deleteFile(putObjectRequest.getFile());
 
 		return s3Client.getUrl(postMediaDTO.getConfigS3DTO().getS3BucketName(), uniqueFileName).toString();
 	}
@@ -54,6 +59,12 @@ public class PostS3MediaServiceImpl implements PostS3MediaService {
 			return file;
 		} catch (IOException e) {
 			throw new BadRequest400Exception("s3.service.post.createFile.error");
+		}
+	}
+
+	private void deleteFile(final File file) {
+		if (!file.delete()) {
+			log.error(String.format("File %s can't be deleted", file.getName()));
 		}
 	}
 

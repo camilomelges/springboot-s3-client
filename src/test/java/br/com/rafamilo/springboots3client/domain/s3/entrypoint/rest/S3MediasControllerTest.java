@@ -194,6 +194,6 @@ public class S3MediasControllerTest extends S3ContainerSingleton {
 		builder.replaceQueryParam("fileName", getMediaDTO.getFileName());
 
 		resultGet = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, byte[].class);
-		Assertions.assertEquals(HttpStatus.OK, resultGet.getStatusCode());
+		Assertions.assertEquals(HttpStatus.NOT_FOUND, resultGet.getStatusCode());
 	}
 }
