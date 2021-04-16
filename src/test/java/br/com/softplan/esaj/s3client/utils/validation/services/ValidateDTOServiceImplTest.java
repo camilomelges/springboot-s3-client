@@ -22,9 +22,9 @@ public class ValidateDTOServiceImplTest {
 	@InjectMocks
 	private ValidateDTOServiceImpl validateDTOService;
 
-	private static final String NOT_NULL_MESSAGE = "Field can't be null";
-	private static final String NOT_BLANK_MESSAGE = "Field can't be blank";
-	private static final String NOT_EMPTY_MESSAGE = "Field can't be empty";
+	private static final String NOT_NULL_MESSAGE = "dtoForTests.field.null.error";
+	private static final String NOT_BLANK_MESSAGE = "dtoForTests.field.blank.error";
+	private static final String NOT_EMPTY_MESSAGE = "dtoForTests.field.empty.error";
 
 	@Data
 	@Builder
@@ -43,9 +43,11 @@ public class ValidateDTOServiceImplTest {
 			validateDTOService.run(DtoForTest.builder().field(null).build());
 		}).getMessage();
 
-		assertTrue(exceptionMessage.contains(NOT_NULL_MESSAGE));
-		assertTrue(exceptionMessage.contains(NOT_BLANK_MESSAGE));
-		assertTrue(exceptionMessage.contains(NOT_EMPTY_MESSAGE));
+		assertTrue(
+			exceptionMessage.contains(NOT_NULL_MESSAGE)
+				|| exceptionMessage.contains(NOT_BLANK_MESSAGE)
+				|| exceptionMessage.contains(NOT_EMPTY_MESSAGE)
+		);
 	}
 
 	@Test
@@ -54,8 +56,7 @@ public class ValidateDTOServiceImplTest {
 			validateDTOService.run(DtoForTest.builder().field(" ").build());
 		}).getMessage();
 
-		assertFalse(exceptionMessage.contains(NOT_NULL_MESSAGE));
-		assertFalse(exceptionMessage.contains(NOT_EMPTY_MESSAGE));
+		assertFalse(exceptionMessage.contains(NOT_NULL_MESSAGE) && exceptionMessage.contains(NOT_EMPTY_MESSAGE));
 		assertTrue(exceptionMessage.contains(NOT_BLANK_MESSAGE));
 	}
 
@@ -66,7 +67,6 @@ public class ValidateDTOServiceImplTest {
 		}).getMessage();
 
 		assertFalse(exceptionMessage.contains(NOT_NULL_MESSAGE));
-		assertTrue(exceptionMessage.contains(NOT_EMPTY_MESSAGE));
-		assertTrue(exceptionMessage.contains(NOT_BLANK_MESSAGE));
+		assertTrue(exceptionMessage.contains(NOT_BLANK_MESSAGE) || exceptionMessage.contains(NOT_EMPTY_MESSAGE));
 	}
 }

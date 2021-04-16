@@ -1,6 +1,5 @@
 package br.com.softplan.esaj.s3client.domain.s3.dtos;
 
-import java.io.File;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
@@ -16,10 +15,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class GetMediaDTO {
 
-	private ConfigS3DTO s3Configs;
+	private ConfigS3DTO configS3DTO;
 
-	@NotNull(message = "FileUrl can't be null")
-	@NotBlank(message = "FileUrl can't be blank")
-	@NotEmpty(message = "FileUrl can't be empty")
-	private File file;
+	@NotNull(message = "s3.dto.getMedia.fileName.null.error")
+	@NotBlank(message = "s3.dto.getMedia.fileName.blank.error")
+	@NotEmpty(message = "s3.dto.getMedia.fileName.empty.error")
+	private String fileName;
 }

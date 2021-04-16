@@ -9,7 +9,6 @@ import javax.validation.ValidatorFactory;
 import org.springframework.stereotype.Service;
 
 import br.com.softplan.esaj.s3client.utils.entrypoint.exceptions.BadRequest400Exception;
-import br.com.softplan.esaj.s3client.utils.string.StringUtils;
 
 @Service
 public class ValidateDTOServiceImpl implements ValidateDTOService {
@@ -19,10 +18,10 @@ public class ValidateDTOServiceImpl implements ValidateDTOService {
 	}
 
 	private void throwError(final Set<ConstraintViolation<Object>> errors) {
-		final StringBuilder stringBuilder = new StringBuilder();
 		if (!errors.isEmpty()) {
-			errors.forEach(error -> stringBuilder.append(error.getMessage().concat("\n")));
-			throw new BadRequest400Exception(stringBuilder.toString());
+			errors.forEach(error -> {
+				throw new BadRequest400Exception(error.getMessage());
+			});
 		}
 	}
 

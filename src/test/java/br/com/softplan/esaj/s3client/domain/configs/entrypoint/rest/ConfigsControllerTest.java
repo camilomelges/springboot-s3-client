@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import br.com.softplan.esaj.s3client.domain.i18n.enums.I18nLocale;
 import br.com.softplan.esaj.s3client.domain.i18n.services.GetMessageServiceImpl;
 
 @ExtendWith({ SpringExtension.class })
@@ -35,10 +34,13 @@ class ConfigsControllerTest {
 	@InjectMocks
 	private GetMessageServiceImpl getMessageService;
 
+	@Value("${server.port}")
+	private String port;
+
 	private static final String APPLICATION_STATUS_PROPERTY = "configs.controller.getApplication.status";
 
 	private String getRequestURL() {
-		return "http://localhost:" + 5001 + "/configs/get-application-status";
+		return "http://localhost:" + port + "/configs/get-application-status";
 	}
 
 	private HttpHeaders createHeaders(final String language, final String basicToken) {
@@ -55,9 +57,8 @@ class ConfigsControllerTest {
 	void deveRetornar401QuandoNaoInformarOAuthorizationBasic() {
 		final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(getRequestURL());
 
-		HttpEntity<?> entity = new HttpEntity<>(createHeaders(null, null));
-
-		ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+		final HttpEntity<?> entity = new HttpEntity<>(createHeaders(null, null));
+		final ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 
 		Assertions.assertEquals(HttpStatus.UNAUTHORIZED, result.getStatusCode());
 	}
@@ -67,8 +68,8 @@ class ConfigsControllerTest {
 		final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(getRequestURL());
 		final String basicToken = "Foo bar";
 
-		HttpEntity<?> entity = new HttpEntity<>(createHeaders(null, basicToken));
-		ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+		final HttpEntity<?> entity = new HttpEntity<>(createHeaders(null, basicToken));
+		final ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 
 		Assertions.assertEquals(HttpStatus.UNAUTHORIZED, result.getStatusCode());
 	}
@@ -78,8 +79,8 @@ class ConfigsControllerTest {
 		final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(getRequestURL());
 		final String basicToken = "Basic " + Base64.getEncoder().encodeToString((basicUserName + ":" + basicPassword).getBytes());
 
-		HttpEntity<?> entity = new HttpEntity<>(createHeaders(null, basicToken));
-		ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+		final HttpEntity<?> entity = new HttpEntity<>(createHeaders(null, basicToken));
+		final ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 
 		Assertions.assertEquals(HttpStatus.OK, result.getStatusCode());
 		Assertions.assertEquals(getMessageService.run("pt_BR", APPLICATION_STATUS_PROPERTY), result.getBody());
@@ -102,8 +103,8 @@ class ConfigsControllerTest {
 		final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(getRequestURL());
 		final String basicToken = "Basic " + Base64.getEncoder().encodeToString((basicUserName + ":" + basicPassword).getBytes());
 
-		HttpEntity<?> entity = new HttpEntity<>(createHeaders("es_CO", basicToken));
-		ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
+		final HttpEntity<?> entity = new HttpEntity<>(createHeaders("es_CO", basicToken));
+		final ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 
 		Assertions.assertEquals(HttpStatus.OK, result.getStatusCode());
 		Assertions.assertEquals(getMessageService.run("es_CO", APPLICATION_STATUS_PROPERTY), result.getBody());

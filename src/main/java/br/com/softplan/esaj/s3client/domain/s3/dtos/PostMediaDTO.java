@@ -1,6 +1,7 @@
 package br.com.softplan.esaj.s3client.domain.s3.dtos;
 
-import java.io.File;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
@@ -14,8 +15,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PostMediaDTO {
 
-	private ConfigS3DTO s3Configs;
+	private ConfigS3DTO configS3DTO;
 
-	@NotNull(message = "File can't be null")
-	private File file;
+	@NotNull(message = "s3.dto.postMedia.fileContent.null.error")
+	@NotEmpty(message = "s3.dto.postMedia.fileContent.empty.error")
+	private byte[] fileContent;
+
+	@NotNull(message = "s3.dto.postMedia.fileName.null.error")
+	@NotBlank(message = "s3.dto.postMedia.fileName.blank.error")
+	@NotEmpty(message = "s3.dto.postMedia.fileName.empty.error")
+	private String fileName;
 }
