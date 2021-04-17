@@ -18,3 +18,5 @@ s3Client:
     S3_MAX_IDLE_MILLIS: 60000
     S3_CONNECTION_TTL: -1
     AWS_SIGNER_TYPE: AWSS3V4SignerType
+  i18n:
+    dir: file:/home/app/target/classes/i18n/

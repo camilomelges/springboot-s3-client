@@ -18,7 +18,8 @@ public class S3ContainerSingleton {
 		if (S3_CONTAINER == null) {
 			S3_CONTAINER = new LocalStackContainer(DockerImageName.parse(getS3Image()))
 				.withServices(LocalStackContainer.Service.S3)
-				.withEnv("DEFAULT_REGION", "us-east-1");
+				.withEnv("DEFAULT_REGION", "us-east-1")
+				.withEnv("USE_LIGHT_IMAGE", "0");
 
 			S3_CONTAINER.start();
 		}

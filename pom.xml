@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>br.com.rafamilo</groupId>
-	<artifactId>springboots3client</artifactId>
+	<artifactId>spring-boot-s3-client</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>s3client</name>
 	<description>Generic amazon s3 client with springboot</description>
@@ -89,7 +89,14 @@
 			<version>${testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.awaitility</groupId>
+			<artifactId>awaitility</artifactId>
+			<version>4.0.3</version>
+			<scope>test</scope>
+		</dependency>
 		<!-- testcontainers dependencies -->
+
 	</dependencies>
 
 	<build>
@@ -104,7 +111,6 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
-					<jvmArguments>-Xms1024m -Xmx4096m</jvmArguments>
 				</configuration>
 			</plugin>
 			<plugin>

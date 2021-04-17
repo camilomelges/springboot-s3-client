@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.CompletableFuture;
 
 import br.com.rafamilo.springboots3client.domain.s3.services.config.GetS3ConfigService;
 import br.com.rafamilo.springboots3client.utils.entrypoint.exceptions.BadRequest400Exception;
@@ -13,6 +14,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import br.com.rafamilo.springboots3client.domain.s3.components.generateuniquename.GenerateUniqueNameComponent;
@@ -28,7 +30,8 @@ public class PostS3MediaServiceImpl implements PostS3MediaService {
 	private final GenerateUniqueNameComponent generateUniqueNameComponent;
 	private final ValidateS3Service validateS3Service;
 
-	public String run(final PostMediaDTO postMediaDTO) {
+	@Async("asyncExecutor")
+	public CompletableFuture<String> run(final PostMediaDTO postMediaDTO) {
 		final AmazonS3 s3Client = getS3ConfigService.run(postMediaDTO.getConfigS3DTO());
 		validateS3Service.run(s3Client, postMediaDTO.getConfigS3DTO());
 
@@ -38,18 +41,15 @@ public class PostS3MediaServiceImpl implements PostS3MediaService {
 
 		deleteFile(putObjectRequest.getFile());
 
-		return s3Client.getUrl(postMediaDTO.getConfigS3DTO().getS3BucketName(), uniqueFileName).toString();
+		return CompletableFuture.completedFuture(s3Client.getUrl(postMediaDTO.getConfigS3DTO().getS3BucketName(), uniqueFileName).toString());
 	}
 
 
 
 	private String mountFileName(final PostMediaDTO postMediaDTO) {
-		final StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(generateUniqueNameComponent.run());
-		stringBuilder.append(".");
-		stringBuilder.append(StringUtils.getLastSubstring(postMediaDTO.getFileName(), '.'));
-
-		return stringBuilder.toString();
+		return generateUniqueNameComponent.run()
+			+ "."
+			+ StringUtils.getLastSubstring(postMediaDTO.getFileName(), '.');
 	}
 
 	private File mountFile(final String uniqueFileName, final byte[] fileContent) {

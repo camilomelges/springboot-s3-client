@@ -4,11 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import br.com.rafamilo.springboots3client.domain.i18n.services.GetMessageServiceImpl;
 import br.com.rafamilo.springboots3client.domain.s3.dtos.ConfigS3DTO;
@@ -17,9 +18,9 @@ import br.com.rafamilo.springboots3client.domain.s3.dtos.GetMediaDTO;
 import br.com.rafamilo.springboots3client.domain.s3.dtos.PostMediaDTO;
 import br.com.rafamilo.springboots3client.testcontainers.S3ContainerSingleton;
 import br.com.rafamilo.springboots3client.utils.string.StringUtils;
+import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,14 +29,12 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.client.HttpMessageConverterExtractor;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+@Log4j2
 @ExtendWith({ SpringExtension.class })
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class S3MediasControllerBulkTest extends S3ContainerSingleton {
@@ -50,6 +49,8 @@ public class S3MediasControllerBulkTest extends S3ContainerSingleton {
 	private GetMessageServiceImpl getMessageService;
 	@Value("${server.port}")
 	private String port;
+
+	private int allCount;
 
 	private String getRequestURL() {
 		return "http://localhost:" + port + "/s3-medias";
@@ -78,97 +79,95 @@ public class S3MediasControllerBulkTest extends S3ContainerSingleton {
 			+ S3_CONTAINER.getFirstMappedPort().toString();
 	}
 
-	private PostMediaDTO mountPostDTO(final File file) throws IOException {
-		return PostMediaDTO.builder()
-			.configS3DTO(mountConfigS3DTO())
-			.fileContent(Files.readAllBytes(Path.of(file.getAbsolutePath())))
-			.fileName(file.getName()).build();
+	private PostMediaDTO mountPostDTO(final File file) {
+		try {
+			return PostMediaDTO.builder()
+				.configS3DTO(mountConfigS3DTO())
+				.fileContent(Files.readAllBytes(Path.of(file.getAbsolutePath())))
+				.fileName(file.getName()).build();
+		} catch (final IOException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
-	private GetMediaDTO mountGetDTO(final String fileName) throws NoSuchAlgorithmException {
-		final byte[] fileContent = new byte[20];
-		SecureRandom.getInstanceStrong().nextBytes(fileContent);
+	private GetMediaDTO mountGetDTO(final String fileName) {
 		return GetMediaDTO.builder()
 			.configS3DTO(mountConfigS3DTO())
 			.fileName(fileName).build();
 	}
 
-	private DeleteMediaDTO mountDeleteDTO(final String fileName) throws NoSuchAlgorithmException {
-		final byte[] fileContent = new byte[20];
-		SecureRandom.getInstanceStrong().nextBytes(fileContent);
+	private DeleteMediaDTO mountDeleteDTO(final String fileName) {
 		return DeleteMediaDTO.builder()
 			.configS3DTO(mountConfigS3DTO())
 			.fileName(fileName).build();
 	}
 
 	@Test
-	@Timeout(value = 32000, unit = TimeUnit.MILLISECONDS)
-	void deveSalvarOArquivoNoS3ERetornarAUrlCorreta() throws IOException, NoSuchAlgorithmException {
-		final String folderName = "medias/";
-		final File directory = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(folderName)).getFile());
-		final File[] files = directory.listFiles();
+	void deveSalvarBulkEmMenosDeUmMinuto() {
+		final String dirName = "medias/";
+		final File directory = new File(Objects.requireNonNull(getClass().getClassLoader().getResource(dirName)).getFile());
+		final File[] files = Objects.requireNonNull(directory.listFiles());
+		allCount = files.length * 20 - 1;
 
-		assert files != null;
 		for (int i = 0; i < 20; i++) {
-			Arrays.stream(files).parallel().forEach(file -> {
-				try {
-					validateTest(mountPostDTO(file));
-				} catch (NoSuchAlgorithmException | IOException e) {
-					e.printStackTrace();
-				}
-			});
+			for (var file : files) {
+				CompletableFuture.runAsync(() -> validateTest(mountPostDTO(file)));
+			}
 		}
+
+		setTimeout(() -> log.info("timeout"), 3000);
 	}
 
-	private void validateTest(final PostMediaDTO postMediaDTO) throws NoSuchAlgorithmException {
+	@Async
+	public void validateTest(final PostMediaDTO postMediaDTO) {
 		final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(getRequestURL());
 		HttpEntity<?> entity = new HttpEntity<>(postMediaDTO, createHeaders());
 
-		ResponseEntity<String> resultPost = testRestTemplate.exchange(builder.toUriString(), HttpMethod.POST, entity, String.class);
+		final ResponseEntity<String> resultPost;
+		try {
+			resultPost = CompletableFuture.completedFuture(testRestTemplate.exchange(builder.toUriString(), HttpMethod.POST, entity, String.class)).get();
+			Assertions.assertTrue(resultPost.getStatusCode().is2xxSuccessful());
+			log.info("post");
 
-		Assertions.assertEquals(HttpStatus.OK, resultPost.getStatusCode());
-		String regex = "^["
-			+ postMediaDTO.getConfigS3DTO().getS3Url()
-			+ "/"
-			+ postMediaDTO.getConfigS3DTO().getS3BucketName();
-		Assertions.assertTrue(Objects.requireNonNull(resultPost.getBody()).matches(regex.concat("].*[.".concat(StringUtils.getLastSubstring(postMediaDTO.getFileName(), '.')).concat("]"))));
+			final GetMediaDTO getMediaDTO = mountGetDTO(StringUtils.getLastSubstring(Objects.requireNonNull(resultPost.getBody()), '/'));
+			entity = new HttpEntity<>(createHeaders());
+			builder.queryParam("s3Url", getMediaDTO.getConfigS3DTO().getS3Url());
+			builder.queryParam("s3AccessKey", getMediaDTO.getConfigS3DTO().getS3AccessKey());
+			builder.queryParam("s3SecretKey", getMediaDTO.getConfigS3DTO().getS3SecretKey());
+			builder.queryParam("s3Region", getMediaDTO.getConfigS3DTO().getS3Region());
+			builder.queryParam("s3BucketName", getMediaDTO.getConfigS3DTO().getS3BucketName());
+			builder.queryParam("fileName", getMediaDTO.getFileName());
 
-//		String fileName = StringUtils.getLastSubstring(Objects.requireNonNull(resultPost.getBody()), '/');
-//		final GetMediaDTO getMediaDTO = mountGetDTO(fileName);
-//		entity = new HttpEntity<>(getMediaDTO, createHeaders());
-//		builder.queryParam("s3Url", getMediaDTO.getConfigS3DTO().getS3Url());
-//		builder.queryParam("s3AccessKey", getMediaDTO.getConfigS3DTO().getS3AccessKey());
-//		builder.queryParam("s3SecretKey", getMediaDTO.getConfigS3DTO().getS3SecretKey());
-//		builder.queryParam("s3Region", getMediaDTO.getConfigS3DTO().getS3Region());
-//		builder.queryParam("s3BucketName", getMediaDTO.getConfigS3DTO().getS3BucketName());
-//		builder.queryParam("fileName", getMediaDTO.getFileName());
-//
-//		ResponseEntity<byte[]> resultGet = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, byte[].class);
-//		Assertions.assertEquals(HttpStatus.OK, resultGet.getStatusCode());
-//		Assertions.assertArrayEquals(postMediaDTO.getFileContent(), resultGet.getBody());
-//
-//		final DeleteMediaDTO deleteMediaDTO = mountDeleteDTO(fileName);
-//		entity = new HttpEntity<>(deleteMediaDTO, createHeaders());
-//		builder.replaceQueryParam("s3Url", deleteMediaDTO.getConfigS3DTO().getS3Url());
-//		builder.replaceQueryParam("s3AccessKey", deleteMediaDTO.getConfigS3DTO().getS3AccessKey());
-//		builder.replaceQueryParam("s3SecretKey", deleteMediaDTO.getConfigS3DTO().getS3SecretKey());
-//		builder.replaceQueryParam("s3Region", deleteMediaDTO.getConfigS3DTO().getS3Region());
-//		builder.replaceQueryParam("s3BucketName", deleteMediaDTO.getConfigS3DTO().getS3BucketName());
-//		builder.replaceQueryParam("fileName", deleteMediaDTO.getFileName());
-//
-//		ResponseEntity<Void> resultDelete = testRestTemplate.exchange(builder.toUriString(), HttpMethod.DELETE, entity, Void.class);
-//		Assertions.assertEquals(HttpStatus.OK, resultDelete.getStatusCode());
-//
-//		entity = new HttpEntity<>(getMediaDTO, createHeaders());
-//		builder.replaceQueryParam("s3Url", getMediaDTO.getConfigS3DTO().getS3Url());
-//		builder.replaceQueryParam("s3AccessKey", getMediaDTO.getConfigS3DTO().getS3AccessKey());
-//		builder.replaceQueryParam("s3SecretKey", getMediaDTO.getConfigS3DTO().getS3SecretKey());
-//		builder.replaceQueryParam("s3Region", getMediaDTO.getConfigS3DTO().getS3Region());
-//		builder.replaceQueryParam("s3BucketName", getMediaDTO.getConfigS3DTO().getS3BucketName());
-//		builder.replaceQueryParam("fileName", getMediaDTO.getFileName());
-//
-//		ResponseEntity<String> resultGet2 = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
-//		Assertions.assertEquals(HttpStatus.NOT_FOUND, resultGet2.getStatusCode());
-//		Assertions.assertEquals(getMessageService.run(null, "s3.service.get.getFile.error404"), resultGet2.getBody());
+			final ResponseEntity<byte[]> resultGet = CompletableFuture.completedFuture(testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, byte[].class)).get();
+			Assertions.assertTrue(resultGet.getStatusCode().is2xxSuccessful());
+			Assertions.assertArrayEquals(postMediaDTO.getFileContent(), resultGet.getBody());
+			log.info("get");
+
+			final CompletableFuture<ResponseEntity<Void>> resultDelete = CompletableFuture.completedFuture(testRestTemplate.exchange(builder.toUriString(), HttpMethod.DELETE, entity, Void.class));
+			Assertions.assertTrue(resultDelete.get().getStatusCode().is2xxSuccessful());
+			log.info("delete-".concat(String.valueOf(--allCount)));
+		} catch (InterruptedException | ExecutionException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void setTimeout(Runnable runnable, int delay) {
+		if (allCount > 0) {
+			AtomicBoolean running = new AtomicBoolean(true);
+			final Thread thread = new Thread(() -> {
+				try {
+					runnable.run();
+					Thread.sleep(delay);
+					running.set(false);
+				} catch (Exception e) {
+					log.info(e.getMessage());
+				}
+			});
+			thread.start();
+
+			while (running.get()) {}
+			setTimeout(() -> log.info("timeout"), 5000);
+		}
 	}
 }
