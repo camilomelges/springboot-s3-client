@@ -1,6 +1,7 @@
 package br.com.rafamilo.springboots3client.domain.configs.entrypoint.rest;
 
 import java.util.Base64;
+import java.util.Objects;
 
 import br.com.rafamilo.springboots3client.domain.i18n.services.GetMessageServiceImpl;
 import org.junit.jupiter.api.Assertions;
@@ -37,6 +38,7 @@ class ConfigsControllerTest {
 	private String port;
 
 	private static final String APPLICATION_STATUS_PROPERTY = "configs.controller.getApplication.status";
+	private static final String UNAUTHORIZED_STATUS_PROPERTY = "s3.controller.unauthorized.error";
 
 	private String getRequestURL() {
 		return "http://localhost:" + port + "/configs/get-application-status";
@@ -60,10 +62,11 @@ class ConfigsControllerTest {
 		final ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 
 		Assertions.assertEquals(HttpStatus.UNAUTHORIZED, result.getStatusCode());
+		Assertions.assertTrue(Objects.requireNonNull(result.getBody()).contains("Unauthorized"));
 	}
 
 	@Test
-	void deveRetornar401QuandoNaoOAuthorizationTokenEstiverErrado() {
+	void deveRetornar401QuandoOAuthorizationTokenEstiverErrado() {
 		final UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(getRequestURL());
 		final String basicToken = "Foo bar";
 
@@ -71,6 +74,7 @@ class ConfigsControllerTest {
 		final ResponseEntity<String> result = testRestTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, String.class);
 
 		Assertions.assertEquals(HttpStatus.UNAUTHORIZED, result.getStatusCode());
+		Assertions.assertTrue(Objects.requireNonNull(result.getBody()).contains("Unauthorized"));
 	}
 
 	@Test

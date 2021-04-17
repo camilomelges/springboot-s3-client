@@ -9,4 +9,8 @@ public abstract class StringUtils {
 	public static String trim(final String str) {
 		return str.trim();
 	}
+
+	public static String getLastSubstring(final String str, final Character character) {
+		return str.substring(str.lastIndexOf(character) + 1);
+	}
 }

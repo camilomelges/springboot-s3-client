@@ -1,5 +1,7 @@
 server:
   port: 80
+  error:
+    includeMessage: always
 
 s3Client:
   auth:

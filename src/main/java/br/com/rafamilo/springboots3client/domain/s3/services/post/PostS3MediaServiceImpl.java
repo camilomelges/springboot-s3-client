@@ -8,11 +8,11 @@ import java.nio.file.Paths;
 
 import br.com.rafamilo.springboots3client.domain.s3.services.config.GetS3ConfigService;
 import br.com.rafamilo.springboots3client.utils.entrypoint.exceptions.BadRequest400Exception;
+import br.com.rafamilo.springboots3client.utils.string.StringUtils;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.compress.utils.FileNameUtils;
 import org.springframework.stereotype.Service;
 
 import br.com.rafamilo.springboots3client.domain.s3.components.generateuniquename.GenerateUniqueNameComponent;
@@ -41,11 +41,13 @@ public class PostS3MediaServiceImpl implements PostS3MediaService {
 		return s3Client.getUrl(postMediaDTO.getConfigS3DTO().getS3BucketName(), uniqueFileName).toString();
 	}
 
+
+
 	private String mountFileName(final PostMediaDTO postMediaDTO) {
 		final StringBuilder stringBuilder = new StringBuilder();
 		stringBuilder.append(generateUniqueNameComponent.run());
 		stringBuilder.append(".");
-		stringBuilder.append(FileNameUtils.getExtension(postMediaDTO.getFileName()));
+		stringBuilder.append(StringUtils.getLastSubstring(postMediaDTO.getFileName(), '.'));
 
 		return stringBuilder.toString();
 	}

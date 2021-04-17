@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Data
 @Builder
@@ -17,6 +18,7 @@ public class PostMediaDTO {
 
 	private ConfigS3DTO configS3DTO;
 
+	@ToString.Exclude
 	@NotNull(message = "s3.dto.postMedia.fileContent.null.error")
 	@NotEmpty(message = "s3.dto.postMedia.fileContent.empty.error")
 	private byte[] fileContent;
