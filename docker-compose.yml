@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  s3-client-api:
+    build: .
+    container_name: s3-client-api
+    restart: always
+    ports:
+      - 5000:80
+    entrypoint: [ "java", "-Dspring.profiles.active=compose", "-jar", "/home/app/app.jar" ]
+    networks:
+      - s3server
+#      - rabbitmq
+
+  s3-server:
+    image: localstack/localstack:latest
+    container_name: s3-server
+    restart: always
+    environment:
+      - DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=saj
+      - AWS_SECRET_ACCESS_KEY=agesune1
+      - SERVICES=s3
+    ports:
+      - 5555:4566
+    networks:
+      - s3server
+
+#  s3-client-rabbitmq:
+#    image: rabbitmq:3-management
+#    container_name: s3-client-rabbitmq
+#    restart: always
+#    environment:
+#      - RABBITMQ_DEFAULT_USER=modeloConsolidacaoMq
+#      - RABBITMQ_DEFAULT_PASS=[y%Z}ktHfu4A22;d
+#    ports:
+#      - 5672:5672
+#      - 15672:15672
+#    volumes:
+#      - "./data:/var/lib/rabbitmq/"
+#    networks:
+#      - rabbitmq
+
+networks:
+  s3server:
+#  rabbitmq:
