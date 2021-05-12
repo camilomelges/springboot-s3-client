@@ -1,0 +1,26 @@
+server:
+  port: 5001
+  error:
+    includeMessage: always
+
+logging:
+  level:
+    web: DEBUG
+
+s3Client:
+  auth:
+    basicAuth:
+      userName: saj
+      password: agesune1
+  cors:
+    allowedOrigins: "*"
+  configs:
+    S3_CONNECTION_TIMEOUT: 10000
+    S3_REQUEST_TIMEOUT: 0
+    S3_SOCKET_TIMEOUT: 50000
+    S3_MAX_POOL_CONNECTION: 50
+    S3_MAX_IDLE_MILLIS: 60000
+    S3_CONNECTION_TTL: -1
+    AWS_SIGNER_TYPE: AWSS3V4SignerType
+  i18n:
+    dir: i18n/

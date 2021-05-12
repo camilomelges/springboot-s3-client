@@ -1,0 +1,22 @@
+server:
+  port: 80
+  error:
+    includeMessage: always
+
+s3Client:
+  auth:
+    basicAuth:
+      userName: yD=r@Z@pQ\&.rnU+2bQm>T:A/>Fdj@S]
+      password: 7N%bdEfE-SUSQ43;_aty2Y}SF4z[(qnm
+  cors:
+    allowedOrigins: "*"
+  configs:
+    S3_CONNECTION_TIMEOUT: 10000
+    S3_REQUEST_TIMEOUT: 0
+    S3_SOCKET_TIMEOUT: 50000
+    S3_MAX_POOL_CONNECTION: 50
+    S3_MAX_IDLE_MILLIS: 60000
+    S3_CONNECTION_TTL: -1
+    AWS_SIGNER_TYPE: AWSS3V4SignerType
+  i18n:
+    dir: file:/home/app/target/classes/i18n/
